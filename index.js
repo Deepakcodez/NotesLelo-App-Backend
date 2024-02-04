@@ -11,12 +11,12 @@ const db = require("./utils/db.connection");
 db.connectDB();
 
 // Middlewares
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
+const corsOptions = {
+  origin: ['http://localhost:5173', 'https://notes-lelo-app-backend.vercel.app'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
