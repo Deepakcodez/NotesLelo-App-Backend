@@ -5,6 +5,19 @@ const userdb = require("../model/user.model");
 const userModel = userdb.User;
 const db = require("../utils/db.connection");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+var Mailgen = require('mailgen');
+const responseSender = require("../utils/responseSender");
+
+
+
+
+
+
+
+
+
+
 
 const demo = async (req, resp) => {
   try {
@@ -349,6 +362,80 @@ const deleteGroup = async (req, res) => {
   }
 };
 
+
+
+
+
+
+// invite user
+
+const invite = async (req, resp) => {
+  const { email, groupId } = req.body;
+  const from = req.user.name
+  try {
+      if (!email) {
+          return resp.status(400).send({ success: false, message: "Email not provided" });
+      }
+
+      // Code for sending email
+      const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+              user: "noteslelo.app@gmail.com",
+              pass: "lplj hjxv hmjx lrnw",
+          },
+      });
+
+      const mailGenerator = new Mailgen({
+          theme: 'default',
+          product: {
+              name: 'NotesLelo',
+              link: 'https://yourapp.com/', // Change this URL to your app's URL
+          },
+      });
+
+      // Email template
+      const emailToSend = {
+          subject: 'Invitation to Join NotesLelo Group',
+          body: {
+              greeting: `Dear ${email},`,
+              intro: `You have been invited by ${from} to join the NotesLelo group.`,
+              action: {
+                  instructions: `To join, please click the button below and follow the instructions, Alternatively, you can copy the group code <strong style="color: yellow">"${groupId}"</strong> and apply it to join the group manually.`,
+                  button: {
+                      color: '#22BC66',
+                      text: 'Join Group',
+                      link: 'https://yourapp.com/confirm?s=d9729feb74992cc3482b350163a1a010' // Replace with the actual confirmation link
+                  }
+              },
+             
+              outro: 'If you have any questions or need further assistance, feel free to contact us.',
+              closing: 'Best regards,',
+              signature: 'The NotesLelo Team'
+          }
+      };
+
+      // Generate an HTML email with the provided contents
+      const emailBody = mailGenerator.generate(emailToSend);
+
+      const message = {
+          from: 'noteslelo.app@gmail.com',
+          to: email,
+          subject: "Welcome to NotesLelo",
+          html: emailBody,
+      };
+
+      await transporter.sendMail(message);
+
+      return resp.status(200).send({ success: true, message: "User invited successfully" });
+  } catch (error) {
+      console.error("Error sending invitation email:", error);
+      return resp.status(500).send({ success: false, message: "Internal server error" });
+  }
+}
+
+
+
 module.exports = {
   demo,
   createGroup,
@@ -358,4 +445,5 @@ module.exports = {
   updateGroup,
   deleteGroup,
   groupById,
+  invite
 };
