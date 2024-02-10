@@ -57,6 +57,11 @@ const uploadFile = async (req, res) => {
   }
 };
 
+
+
+
+
+
 const groupNotes = async (req, resp) => {
   const { groupId } = req.params;
   const userId = req.userId;
@@ -97,6 +102,12 @@ const groupNotes = async (req, resp) => {
     return resp.send(responseSender(false, 500, "internal server error", null));
   }
 };
+
+
+
+
+
+
 
 const addLikeOrDislike = async (req, resp) => {
   const { notesId } = req.params;
@@ -181,7 +192,7 @@ const savedNotes = async (req, resp) => {
     const usersavednotes = userdata.savedNotes.some((id) => id.equals(notesId));
 
     if (usersavednotes) {
-      // User has already liked, remove the saved
+      // User has already saved, remove the saved
 
       await userdata.savedNotes.pull(notesId);
       await userdata.save();
@@ -219,6 +230,18 @@ const UserSavedNotes = async (req, resp) => {
     resp.send(responseSender(false, 500, "internal server error", null));
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 const userNotes = async (req, resp) => {
   const userNotesArray = req.user.posts;

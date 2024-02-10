@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema(
     savedNotes :[
       {
         type : mongoose.Schema.Types.ObjectId,
-        ref  : "Notes"
+        ref  : "Post"
       }
     ],
     group:[{
