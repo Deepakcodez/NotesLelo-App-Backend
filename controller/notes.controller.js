@@ -197,12 +197,12 @@ const saveNotes = async (req, resp) => {
       notes.saved.pull(userId);
 
       // Remove the note from user's likesOnOwnNotes
-      // user.likesOnOwnNotes.pull(userId);
+      user.savedNotes.pull(notesId);
     } else {
       // User has not liked, add the like
       notes.saved.push(userId);
       // Add the note to user's likesOnOwnNotes
-      // user.likesOnOwnNotes.push(userId);
+      user.savedNotes.push(notesId);
     }
 
     await notes.save();
