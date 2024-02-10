@@ -170,7 +170,7 @@ const addLikeOrDislike = async (req, resp) => {
 
 
 
-const savedNotes = async (req, resp) => {
+const saveNotes = async (req, resp) => {
   const { notesId } = req.params;
   const userId = req.userId;
 
@@ -297,7 +297,7 @@ module.exports = {
   uploadFile,
   groupNotes,
   addLikeOrDislike,
-  savedNotes,
+  saveNotes,
   UserSavedNotes,
   userNotes,
 };
