@@ -170,52 +170,77 @@ const addLikeOrDislike = async (req, resp) => {
 
 
 
-
-
-
-
-
-
 const savedNotes = async (req, resp) => {
+  const { notesId } = req.params;
   const userId = req.userId;
-  const { notesId } = req.body;
-  if (!userId) {
-    return resp.send(responseSender(false, 500, "user not defined", null));
-  }
 
-  if (!notesId) {
-    return resp.send(responseSender(false, 500, "notes id not provided", null));
-  }
   try {
-    const userdata = await userModel.findById(userId);
-    // Check if the user has already liked the notes
-    const usersavednotes = userdata.savedNotes.some((id) => id.equals(notesId));
+    // Check if the notes exist
+    const notes = await notesModel.findById(notesId);
 
-    if (usersavednotes) {
-      // User has already saved, remove the saved
-
-      await userdata.savedNotes.pull(notesId);
-      await userdata.save();
-      resp.send(
-        responseSender(true, 200, "notes unsaved", userdata.savedNotes)
-      );
-    } else {
-      // User has not saved, add the save
-      await userdata.savedNotes.push(notesId);
-      await userdata.save();
-      resp.send(
-        responseSender(
-          true,
-          200,
-          "notes saved to saved-notes",
-          userdata.savedNotes
-        )
-      );
+    if (!notes) {
+      return resp
+        .status(404)
+        .send(responseSender(false, 404, "Notes not found", null));
     }
+
+    // Check if the user has already liked the notes
+    const userSaved = notes.saved.some((id) => id.equals(userId));
+
+    // Find the user by userId
+    const user = await userModel.findById(notes.owner);
+
+
+    if (userSaved) {
+      // User has already liked, remove the like (dislike)
+
+      notes.saved.pull(userId);
+
+      // Remove the note from user's likesOnOwnNotes
+      // user.likesOnOwnNotes.pull(userId);
+    } else {
+      // User has not liked, add the like
+      notes.saved.push(userId);
+      // Add the note to user's likesOnOwnNotes
+      // user.likesOnOwnNotes.push(userId);
+    }
+
+    await notes.save();
+    await user.save(); // Save the changes to the user
+
+    // Fetch the updated notes with user data
+    const updatedNotes = await notesModel
+      .findById(notesId)
+      // .populate({
+      //   path: "owner",
+      //   populate: { path: "likesOnOwnNotes" },
+      // });
+
+    return resp
+      .status(200)
+      .send(
+        responseSender(true, 200, "saved o unsaved successfull", updatedNotes.saved)
+      );
   } catch (error) {
-    resp.send(responseSender(false, 500, "internal server error", null));
+    return resp
+      .status(500)
+      .send(responseSender(false, 500, "Internal server error", null));
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const UserSavedNotes = async (req, resp) => {
   const savedNotesid = req.user.savedNotes;
