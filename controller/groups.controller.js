@@ -80,7 +80,6 @@ const createGroup = async (req, resp) => {
         }
       );
       const savedNotification =  await newNotification.save();
-      console.log("this is notification");
       console.log(savedNotification);
 
       return resp.status(200).json({

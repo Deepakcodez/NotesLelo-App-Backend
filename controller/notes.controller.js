@@ -211,10 +211,7 @@ const saveNotes = async (req, resp) => {
     // Fetch the updated notes with user data
     const updatedNotes = await notesModel
       .findById(notesId)
-      // .populate({
-      //   path: "owner",
-      //   populate: { path: "likesOnOwnNotes" },
-      // });
+      .populate();
 
     return resp
       .status(200)
