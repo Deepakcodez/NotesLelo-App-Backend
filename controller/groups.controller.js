@@ -6,18 +6,8 @@ const userModel = userdb.User;
 const db = require("../utils/db.connection");
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
-var Mailgen = require('mailgen');
+var Mailgen = require("mailgen");
 const responseSender = require("../utils/responseSender");
-
-
-
-
-
-
-
-
-
-
 
 const demo = async (req, resp) => {
   try {
@@ -72,14 +62,12 @@ const createGroup = async (req, resp) => {
           await user.save();
         }
       }
-        console.log(storedGroup.title)
-      const newNotification = new notification(
-        {
-          user: req.userId,
-          message:`, you successfully created a ${storedGroup.title} Group`
-        }
-      );
-      const savedNotification =  await newNotification.save();
+      console.log(storedGroup.title);
+      const newNotification = new notification({
+        user: req.userId,
+        message: `, you successfully created a ${storedGroup.title} Group`,
+      });
+      const savedNotification = await newNotification.save();
       console.log(savedNotification);
 
       return resp.status(200).json({
@@ -93,7 +81,8 @@ const createGroup = async (req, resp) => {
     return resp.status(400).json({
       status: 400,
       success: false,
-      Message: "internal server error",error,
+      Message: "internal server error",
+      error,
     });
   }
 };
@@ -117,16 +106,13 @@ const joinGroup = async (req, resp) => {
     user.memberOf.push(Group._id);
     Group.members.push(req.userId);
     await user.save();
-    await Group.save();                         
+    await Group.save();
 
-    
-    const newNotification = new notification(
-        {
-          user:req.userId,
-          message:`,you successfully joined in ${Group.title} Group`
-        }
-      )
-    const savedNotification =  await newNotification.save()
+    const newNotification = new notification({
+      user: req.userId,
+      message: `,you successfully joined in ${Group.title} Group`,
+    });
+    const savedNotification = await newNotification.save();
     console.log(savedNotification);
     console.log(">>>>>>>>>>> GROUP JOINED SUCCESSFULLY");
     resp.status(200).json({
@@ -139,15 +125,6 @@ const joinGroup = async (req, resp) => {
     console.log(">>>>>>>>>>>", error);
   }
 };
-
-
-
-
-
-
-
-
-
 
 //all groups API
 const allGroups = async (req, resp) => {
@@ -302,7 +279,6 @@ const updateGroup = async (req, res) => {
   }
 };
 
-
 // delete api for group
 const deleteGroup = async (req, res) => {
   const { id } = req.params;
@@ -361,79 +337,102 @@ const deleteGroup = async (req, res) => {
   }
 };
 
-
-
-
-
-
 // invite user
 
 const invite = async (req, resp) => {
   const { email, groupId } = req.body;
-  const from = req.user.name
+  const from = req.user.name;
   try {
-      if (!email) {
-          return resp.status(400).send({ success: false, message: "Email not provided" });
-      }
+    if (!email) {
+      return resp
+        .status(400)
+        .send({ success: false, message: "Email not provided" });
+    }
 
-      // Code for sending email
-      const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-              user: "noteslelo.app@gmail.com",
-              pass: "lplj hjxv hmjx lrnw",
+    // Code for sending email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "noteslelo.app@gmail.com",
+        pass: "lplj hjxv hmjx lrnw",
+      },
+    });
+
+    const mailGenerator = new Mailgen({
+      theme: "default",
+      product: {
+        name: "NotesLelo",
+        link: "https://notes-lelo-web-app.vercel.app/", // Change this URL to your app's URL
+      },
+    });
+
+    // Email template
+    const emailToSend = {
+      subject: "Invitation to Join NotesLelo Group",
+      body: {
+        greeting: `Dear ${email},`,
+        intro: `You have been invited by ${from} to join the NotesLelo group.`,
+        action: {
+          instructions: `To join, please click the button below and follow the instructions, Alternatively, you can copy the group code <strong style="color: yellow">"${groupId}"</strong> and apply it to join the group manually.`,
+          button: {
+            color: "#22BC66",
+            text: "Join Group",
+            link: "https://notes-lelo-web-app.vercel.app/", // Replace with the actual confirmation link
           },
-      });
+        },
 
-      const mailGenerator = new Mailgen({
-          theme: 'default',
-          product: {
-              name: 'NotesLelo',
-              link: 'https://yourapp.com/', // Change this URL to your app's URL
-          },
-      });
+        outro:
+          "If you have any questions or need further assistance, feel free to contact us.",
+        closing: "Best regards,",
+        signature: "The NotesLelo Team",
+      },
+    };
 
-      // Email template
-      const emailToSend = {
-          subject: 'Invitation to Join NotesLelo Group',
-          body: {
-              greeting: `Dear ${email},`,
-              intro: `You have been invited by ${from} to join the NotesLelo group.`,
-              action: {
-                  instructions: `To join, please click the button below and follow the instructions, Alternatively, you can copy the group code <strong style="color: yellow">"${groupId}"</strong> and apply it to join the group manually.`,
-                  button: {
-                      color: '#22BC66',
-                      text: 'Join Group',
-                      link: 'https://yourapp.com/confirm?s=d9729feb74992cc3482b350163a1a010' // Replace with the actual confirmation link
-                  }
-              },
-             
-              outro: 'If you have any questions or need further assistance, feel free to contact us.',
-              closing: 'Best regards,',
-              signature: 'The NotesLelo Team'
-          }
-      };
+    // Generate an HTML email with the provided contents
+    const emailBody = mailGenerator.generate(emailToSend);
 
-      // Generate an HTML email with the provided contents
-      const emailBody = mailGenerator.generate(emailToSend);
+    const message = {
+      from: "noteslelo.app@gmail.com",
+      to: email,
+      subject: "Welcome to NotesLelo",
+      html: emailBody,
+    };
 
-      const message = {
-          from: 'noteslelo.app@gmail.com',
-          to: email,
-          subject: "Welcome to NotesLelo",
-          html: emailBody,
-      };
+    await transporter.sendMail(message);
 
-      await transporter.sendMail(message);
-
-      return resp.status(200).send({ success: true, message: "User invited successfully" });
+    return resp
+      .status(200)
+      .send({ success: true, message: "User invited successfully" });
   } catch (error) {
-      console.error("Error sending invitation email:", error);
-      return resp.status(500).send({ success: false, message: "Internal server error" });
+    console.error("Error sending invitation email:", error);
+    return resp
+      .status(500)
+      .send({ success: false, message: "Internal server error" });
   }
-}
+};
 
+const leftGroup = async (req, resp) => {
+  const { id } = req.params;
 
+  if (!id) {
+    resp.status(400).send(responseSender(false, 400, "id did not found", null));
+  }
+  try {
+    const group = groupModel.findById(id);
+    console.log(">>>>>>>>>>>", group);
+    const userId = req.userId;
+    // Remove the user from the group members array
+    const updatedMembers = group.members.filter((obj) => obj._id != userId);
+
+    // Update the group with the modified members array
+    await groupModel.findByIdAndUpdate(id, { members: updatedMembers });
+  } catch (error) {
+    console.log(">>>>>>>>>>>", error);
+    resp
+      .status(500)
+      .send(responseSender(false, 500, "internal server error", null));
+  }
+};
 
 module.exports = {
   demo,
@@ -444,5 +443,6 @@ module.exports = {
   updateGroup,
   deleteGroup,
   groupById,
-  invite
+  invite,
+  leftGroup,
 };

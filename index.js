@@ -6,7 +6,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 
-const port = 8000;
+const port = 8000; 
 const db = require("./utils/db.connection");
 db.connectDB();
 
