@@ -101,10 +101,11 @@ const joinGroup = async (req, resp) => {
       });
     }
     const Group = await groupModel.findById(id);
-    // console.log(">>>>>>>>>>>", Group._id);
-    const user = req.user;
+    console.log(">>>>>>>>>>>g id", Group._id);
+    const userId = req.userId;
+    const user = await userModel.findById(userId)
     user.memberOf.push(Group._id);
-    Group.members.push(req.userId);
+    Group.members.push(userId);
     await user.save();
     await Group.save();
 
@@ -421,11 +422,18 @@ const leftGroup = async (req, resp) => {
     const group = await groupModel.findById(id);
     console.log(">>>>>>>>>>>", group);
     const userId = req.userId;
+    console.log('>>>>>>>>>>>user id', userId)
     // Remove the user from the group members array
     const updatedMembers = group.members.filter((obj) => obj._id != userId);
+    console.log('>>>>>>>>>>>', updatedMembers)
 
     // Update the group with the modified members array
-    await groupModel.findByIdAndUpdate(id, { members: updatedMembers });
+    const updateGroup =  await groupModel.findByIdAndUpdate(id, { members: updatedMembers });
+    console.log('>>>>>>>>>>>lefted')
+    resp
+    .status(200)
+    .send(responseSender(true, 200, "successfully group lefted",updateGroup ));
+
   } catch (error) {
     console.log(">>>>>>>>>>>", error);
     resp
