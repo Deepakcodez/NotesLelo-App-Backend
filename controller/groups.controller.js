@@ -418,7 +418,7 @@ const leftGroup = async (req, resp) => {
     resp.status(400).send(responseSender(false, 400, "id did not found", null));
   }
   try {
-    const group = groupModel.findById(id);
+    const group = await groupModel.findById(id);
     console.log(">>>>>>>>>>>", group);
     const userId = req.userId;
     // Remove the user from the group members array
