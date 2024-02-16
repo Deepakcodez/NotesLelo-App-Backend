@@ -67,7 +67,7 @@ const register = async (req, resp) => {
         theme: 'default',
         product: {
           name: 'NotesLelo',
-          link: 'https://yourapp.com/', // Change this URL to your app's URL
+          link: 'https://notes-lelo-web-app.vercel.app/signIn', // Change this URL to your app's URL
         },
       });
 
@@ -83,7 +83,7 @@ var emailToSend = {
           button: {
               color: '#22BC66', // Optional action button color
               text: 'Confirm Your Account',
-              link: 'https://yourapp.com/confirm?s=d9729feb74992cc3482b350163a1a010' // Change this URL to the actual confirmation endpoint
+              link: 'https://notes-lelo-web-app.vercel.app/signIn' // Change this URL to the actual confirmation endpoint
             }
       },
       additionalInfo: 'By confirming your account, you\'ll gain access to all the exciting features and benefits that NotesLelo has to offer.',
