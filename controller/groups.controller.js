@@ -318,9 +318,9 @@ const deleteGroup = async (req, res) => {
 
     // req.userId got from middleware
     const user = await userModel.findById(req.userId);
-    const index = user.memberOf.indexOf(id);
-    user.memberOf.splice(index, 1); // deleting ref of group in user model also
-    await user.save();
+    const updateduserModel = user.memberOf.filter((groupId) => groupId.toString() != id.toString());
+    const updateUser =  await userModel.findByIdAndUpdate(userId, { memberOf: updateduserModel });
+
 
     res.status(200).json({
       success: true,
