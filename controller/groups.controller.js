@@ -47,7 +47,7 @@ const createGroup = async (req, resp) => {
         title,
         description,
         owner: [{ owner: req.userId }],
-        members: [{ members: req.userId }],
+        members:   req.userId ,
       });
 
       const storedGroup = await group.save();
@@ -412,27 +412,42 @@ const invite = async (req, resp) => {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
 const leftGroup = async (req, resp) => {
   const { id } = req.params;
 
   if (!id) {
     resp.status(400).send(responseSender(false, 400, "id did not found", null));
   }
+  const userId = req.userId;
   try {
     const group = await groupModel.findById(id);
-    console.log(">>>>>>>>>>>", group);
-    const userId = req.userId;
-    console.log('>>>>>>>>>>>user id', userId)
+    const user = await userModel.findById(userId)
+    console.log(">>>>>>>>>>>", user);
+   
     // Remove the user from the group members array
-    const updatedMembers = group.members.filter((obj) => obj._id != userId);
+    const updatedMembers = group.members.filter((memberId) => memberId.toString() != userId.toString());
     console.log('>>>>>>>>>>>', updatedMembers)
+
+    const updateduserModel = user.memberOf.filter((groupId) => groupId.toString() != id.toString());
+
 
     // Update the group with the modified members array
     const updateGroup =  await groupModel.findByIdAndUpdate(id, { members: updatedMembers });
+    const updateUser =  await userModel.findByIdAndUpdate(userId, { memberOf: updateduserModel });
     console.log('>>>>>>>>>>>lefted')
     resp
     .status(200)
-    .send(responseSender(true, 200, "successfully group lefted",updateGroup ));
+    .send(responseSender(true, 200, "successfully group lefted",{updateGroup,updateUser }));
 
   } catch (error) {
     console.log(">>>>>>>>>>>", error);
