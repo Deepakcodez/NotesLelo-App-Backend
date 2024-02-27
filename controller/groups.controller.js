@@ -90,40 +90,68 @@ const createGroup = async (req, resp) => {
 // join Group API
 
 const joinGroup = async (req, resp) => {
-  const { id } = req.body;
-  // console.log(">>>>>>>>>>>id", id);
+  const { groupId } = req.params; // Using "Id" to match frontend parameter
+  console.log(">>>>>>>>>>> group id from params", groupId); // Logging for debugging
+  
   try {
-    if (!id) {
-      resp.status(404).json({
+    if (!groupId) {
+      return resp.status(404).json({
         status: 404,
         success: false,
-        message: "Require ID",
+        message: "ID is required",
       });
     }
-    const Group = await groupModel.findById(id);
-    console.log(">>>>>>>>>>>g id", Group._id);
+    
+    const group = await groupModel.findById(groupId);
+    if (!group) {
+      return resp.status(404).json({
+        status: 404,
+        success: false,
+        message: "Group not found",
+      });
+    }
+    
     const userId = req.userId;
-    const user = await userModel.findById(userId)
-    user.memberOf.push(Group._id);
-    Group.members.push(userId);
+    const user = await userModel.findById(userId);
+    
+    if (!user) {
+      return resp.status(404).json({
+        status: 404,
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.memberOf.push(group._id);
+    group.members.push(userId);
+
     await user.save();
-    await Group.save();
+    await group.save();
 
     const newNotification = new notification({
       user: req.userId,
-      message: `,you successfully joined in ${Group.title} Group`,
+      message: `You successfully joined the ${group.title} Group`,
     });
+    
     const savedNotification = await newNotification.save();
     console.log(savedNotification);
+
     console.log(">>>>>>>>>>> GROUP JOINED SUCCESSFULLY");
-    resp.status(200).json({
+    
+    return resp.status(200).json({
       status: 200,
       success: true,
-      message: "group joined successfully",
-      data: Group,
+      message: "Group joined successfully",
+      data: group,
     });
   } catch (error) {
-    console.log(">>>>>>>>>>>", error);
+    console.log("Error:", error);
+    return resp.status(500).json({
+      status: 500,
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -481,7 +509,8 @@ const groupMember = async (req, resp)=>{
 
       const membersId =  group.members;
       const members = await userModel.findById(membersId);
-      
+      console.log('>>>>>>>>>>>', members)
+
       
       resp
       .status(200)
