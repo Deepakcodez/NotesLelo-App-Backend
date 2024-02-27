@@ -12,7 +12,7 @@ db.connectDB();
 
 // Middlewares
 const corsOptions = {
-  origin: '*',
+  origin: ['http://localhost:5173', 'https://notes-lelo-web-app.vercel.app'],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204,
