@@ -90,7 +90,7 @@ const createGroup = async (req, resp) => {
 // join Group API
 
 const joinGroup = async (req, resp) => {
-  const { groupId } = req.params; // Using "Id" to match frontend parameter
+  const { groupId } = req.body; // Using "Id" to match frontend parameter
   console.log(">>>>>>>>>>> group id from params", groupId); // Logging for debugging
   
   try {
