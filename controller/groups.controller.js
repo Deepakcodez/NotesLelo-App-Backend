@@ -91,7 +91,7 @@ const createGroup = async (req, resp) => {
 
 const joinGroup = async (req, resp) => {
   const { groupId } = req.body; // Using "Id" to match frontend parameter
-  console.log(">>>>>>>>>>> group id from params", groupId); // Logging for debugging
+  // console.log(">>>>>>>>>>> group id from params", groupId); // Logging for debugging
   
   try {
     if (!groupId) {
@@ -508,13 +508,13 @@ const groupMember = async (req, resp)=>{
       }
 
       const membersId =  group.members;
-      const members = await userModel.findById(membersId);
-      console.log('>>>>>>>>>>>', members)
+      const members = await userModel.find({ _id: { $in: membersId } });
+      // console.log('>>>>>>>>>>>', members)
 
       
       resp
       .status(200)
-      .send(responseSender(false, 500, "member details", members));
+      .send(responseSender(true, 200, "member details", members));
       
     } catch (error) {
       resp
