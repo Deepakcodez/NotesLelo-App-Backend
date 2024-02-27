@@ -457,6 +457,43 @@ const leftGroup = async (req, resp) => {
   }
 };
 
+
+
+
+
+
+
+
+const groupMember = async (req, resp)=>{
+    const { groupId} = req.params;
+    try {
+      if(!groupId){
+        resp
+        .status(400)
+        .send(responseSender(false, 500, "Group id not provided", null));
+      }
+      const group = await groupModel.findById(groupId);
+      if(!group){
+        resp
+        .status(400)
+        .send(responseSender(false, 500, "Empty group", null));
+      }
+
+      const membersId =  group.members;
+      const members = await userModel.findById(membersId);
+      
+      
+      resp
+      .status(200)
+      .send(responseSender(false, 500, "member details", members));
+      
+    } catch (error) {
+      resp
+      .status(500)
+      .send(responseSender(false, 500, "internal server error", null));
+    }
+}
+
 module.exports = {
   demo,
   createGroup,
@@ -468,4 +505,5 @@ module.exports = {
   groupById,
   invite,
   leftGroup,
+  groupMember
 };
