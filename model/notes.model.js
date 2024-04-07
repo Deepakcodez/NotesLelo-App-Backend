@@ -13,7 +13,6 @@ const postSchema = new Schema(
       required: true,
     },
     pdf: {
-      //we will handle later  upload pdf on cloudinary
       public_id: String,
       url: String,
     },

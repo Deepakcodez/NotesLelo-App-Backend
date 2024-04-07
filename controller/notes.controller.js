@@ -170,6 +170,8 @@ const addLikeOrDislike = async (req, resp) => {
 
 
 
+
+
 const saveNotes = async (req, resp) => {
   const { notesId } = req.params;
   const userId = req.userId;
@@ -198,11 +200,14 @@ const saveNotes = async (req, resp) => {
 
       // Remove the note from user's likesOnOwnNotes
       user.savedNotes.pull(notesId);
+
+      user.ownNotesSaves.pull(userId);
     } else {
       // User has not liked, add the like
       notes.saved.push(userId);
       // Add the note to user's likesOnOwnNotes
       user.savedNotes.push(notesId);
+      user.ownNotesSaves.push(userId)
     }
 
     await notes.save();
