@@ -44,6 +44,12 @@ const userSchema = new mongoose.Schema(
         ref  : "Post"
       }
     ],
+    ownNotesSaves :[
+      {
+        type : mongoose.Schema.Types.ObjectId,
+        ref  : "User"
+      }
+    ],
     group:[{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Groups",
