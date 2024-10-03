@@ -16,14 +16,18 @@ const demandSchema = new mongoose.Schema(
             required: true,
           },
 
-          like:{
-            type: Number,
-            default: 0
-          },
-          dislike:{
-            type: Number,
-            default: 0
-          }
+          like: [
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User", // Array of users who liked the demand
+            },
+          ],
+          dislike: [
+            {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User", // Array of users who disliked the demand
+            },
+          ],
       },
 
   { timestamps: true }
