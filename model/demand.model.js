@@ -15,6 +15,15 @@ const demandSchema = new mongoose.Schema(
             ref: "Group",
             required: true,
           },
+
+          like:{
+            type: Number,
+            default: 0
+          },
+          dislike:{
+            type: Number,
+            default: 0
+          }
       },
 
   { timestamps: true }

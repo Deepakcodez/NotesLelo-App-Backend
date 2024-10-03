@@ -50,31 +50,26 @@ const demo = async (req, resp) => {
     }
   };
 
- const demands= async(req,resp)=>{
+ const addDisLikeToDemand= async(req,resp)=>{
  
-     const { groupId} = req.params;
+     const { demandId } = req.body;
      try {
 
-        if(!groupId){
-          return  resp.send(responseSender(false,400,"group id not provided",null))
+        if(!demandId){
+          return  resp.send(responseSender(false,400,"demand id not provided",null))
         }
 
-       const demands =  await  demandModel.find({to : groupId})
+       const demand =  await  demandModel.findOne({_id: demandId})
           
-    // Fetch user data for each demand
-    const demandsWithUserData = await Promise.all(
-      demands.map(async (demand) => {
-        const user = await userModel.findById(demand.from);
-        return {
-          demand,
-          user,
-        };
-      })
-    );
-    console.log('>>>>>>>>>>>', demandsWithUserData)
+       if(!demand){
+        return  resp.send(responseSender(false,400,"demand not found",null))
+       }
+
+       demand.dislike = demand.dislike + 1;
+       await demand.save();
        
 
-       resp.send(responseSender(true,200,"demands find succesfully",demandsWithUserData))
+       resp.send(responseSender(true,200,"Like added to demand",demand))
        
       
      } catch (error) {
@@ -82,4 +77,68 @@ const demo = async (req, resp) => {
      }
  }
 
-  module.exports = {demo,addDemand,demands}
+
+ const addLikeToDemand= async(req,resp)=>{
+ 
+  const { demandId } = req.body;
+  try {
+
+     if(!demandId){
+       return  resp.send(responseSender(false,400,"demand id not provided",null))
+     }
+
+    const demand =  await  demandModel.findOne({_id: demandId})
+       
+    if(!demand){
+     return  resp.send(responseSender(false,400,"demand not found",null))
+    }
+
+    demand.like = demand.like + 1;
+    await demand.save();
+    
+
+    resp.send(responseSender(true,200,"Like added to demand",demand))
+    
+   
+  } catch (error) {
+     resp.send(responseSender(false,500,"internal server error",null))
+  }
+}
+
+
+
+ const demands= async(req,resp)=>{
+ 
+  const { groupId} = req.params;
+  try {
+
+     if(!groupId){
+       return  resp.send(responseSender(false,400,"group id not provided",null))
+     }
+
+    const demands =  await  demandModel.find({to : groupId})
+       
+ // Fetch user data for each demand
+ const demandsWithUserData = await Promise.all(
+   demands.map(async (demand) => {
+     const user = await userModel.findById(demand.from);
+     return {
+       demand,
+       user,
+     };
+   })
+ );
+ console.log('>>>>>>>>>>>', demandsWithUserData)
+    
+
+    resp.send(responseSender(true,200,"demands find succesfully",demandsWithUserData))
+    
+   
+  } catch (error) {
+     resp.send(responseSender(false,500,"internal server error",null))
+  }
+}
+
+
+
+  module.exports = {demo,addDemand,demands, addLikeToDemand,addDisLikeToDemand}

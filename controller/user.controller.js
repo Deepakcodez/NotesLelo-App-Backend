@@ -6,6 +6,15 @@ var Mailgen = require('mailgen');
 const responseSender = require("../utils/responseSender");
 
 
+// Demo
+const demo = async (req, resp) => {
+  resp.send({
+    status: 200,
+    message: "Working demo API",
+  });
+};
+
+
 
 // Registration
 const register = async (req, resp) => {
@@ -15,7 +24,7 @@ const register = async (req, resp) => {
     return resp.status(422).json({
       status: 422,
       success: false,
-      error: "Fill in all the details",
+      error: "Fill the all the details",
     });
   }
 
@@ -123,19 +132,6 @@ var emailToSend = {
   }
 };
 
-// Demo
-const demo = async (req, resp) => {
-  resp.send({
-    status: 200,
-    message: "Working demo API",
-  });
-};
-
-module.exports = {
-  register,
-  demo,
-};
-
 
 //login
 const login = async (req, resp) => {
@@ -231,7 +227,7 @@ const isVarify = async (req, resp) => {
 
 
 
-
+//logout
 const logout = async (req, resp) => {
   const userId = req.params.userId; // Change 'req.resp' to the correct property (params or body) that contains userId
 
