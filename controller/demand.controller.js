@@ -94,13 +94,14 @@ const addDislikeToDemand = async (req, resp) => {
 const addLikeToDemand = async (req, resp) => {
   const { demandId } = req.body;
   const userId = req.userId; // Assuming userId is available from auth middleware
-
+ console.log('>>>>>>>>>>>', demandId, userId)
   try {
     if (!demandId) {
       return resp.send(responseSender(false, 400, "Demand ID not provided", null));
     }
 
     const demand = await demandModel.findOne({ _id: demandId });
+    console.log('>>>>>>>>>>>', demand)
 
     if (!demand) {
       return resp.send(responseSender(false, 400, "Demand not found", null));
@@ -165,10 +166,49 @@ const demands = async (req, resp) => {
   }
 };
 
+const deleteDemand = async (req, resp) => {
+  const { demandId, groupId } = req.params;
+  try {
+    if (!demandId || !groupId) {
+      return resp.send(
+        responseSender(false, 400, "credentials not provided", null)
+      );
+    }
+    const group = await groupModel.findById(groupId);
+    if (!group) {
+      return resp.send(
+        responseSender(false, 400, "group not found", null)
+      );
+    }
+
+    const demand = await demandModel.findByIdAndDelete(demandId);
+
+    if (!demand) {
+      return resp.send(
+        responseSender(false, 400, "demand not found", null)
+      );
+    }
+        group.demands = group.demands.filter((id) => id.toString() !== demandId.toString());
+
+        await group.save();
+        await demand.save();
+
+    resp.send(
+      responseSender(true, 200, "demand deleted succesfully", demand)
+    );
+  
+  } catch (error) {
+    resp.send(responseSender(false, 500, "internal server error", null));
+  }
+};
+
+
+
 module.exports = {
   demo,
   addDemand,
   demands,
   addLikeToDemand,
-  addDisLikeToDemand,
+  addDislikeToDemand,
+  deleteDemand
 };
