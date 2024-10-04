@@ -94,14 +94,14 @@ const addDislikeToDemand = async (req, resp) => {
 const addLikeToDemand = async (req, resp) => {
   const { demandId } = req.body;
   const userId = req.userId; // Assuming userId is available from auth middleware
- console.log('>>>>>>>>>>>', demandId, userId)
+ console.log('>>>>>>>>>>>demadn id user id', demandId, userId)
   try {
     if (!demandId) {
       return resp.send(responseSender(false, 400, "Demand ID not provided", null));
     }
 
     const demand = await demandModel.findOne({ _id: demandId });
-    console.log('>>>>>>>>>>>', demand)
+    console.log('>>>>>>>>>>>demadn like', demand.like)
 
     if (!demand) {
       return resp.send(responseSender(false, 400, "Demand not found", null));
