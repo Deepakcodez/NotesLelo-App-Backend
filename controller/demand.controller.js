@@ -167,7 +167,7 @@ const demands = async (req, resp) => {
 };
 
 const deleteDemand = async (req, resp) => {
-  const { demandId, groupId } = req.params;
+  const { demandId, groupId } = req.body;
   try {
     if (!demandId || !groupId) {
       return resp.send(
