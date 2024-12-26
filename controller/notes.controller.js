@@ -83,11 +83,13 @@ const uploadPublicNotes = async (req, res) => {
     });
 
     // Save the record to the database
-    const record = await notesSchema.save();
+    const record = await PublicPost.save();
     // Update the Group document with the new notes _id
     await userModel.findByIdAndUpdate(userId, {
       $push: { posts: record._id },
     });
+
+    await userModel.save();
     // Return a success response
     res.status(200).json({
       success: true,
@@ -148,9 +150,9 @@ const groupNotes = async (req, resp) => {
 
 const getPublicNotes = async (req, res) => {
   try {
-    console.log('>>>>>>>>>>>getting public notes')
-    const publicNotes = await PublicPost.find().populate("owner", "name email")
-    console.log('>>>>>>>>>>>', publicNotes)
+    console.log(">>>>>>>>>>>getting public notes");
+    const publicNotes = await PublicPost.find().populate("owner", "name email");
+    console.log(">>>>>>>>>>>", publicNotes);
     // Check if any public notes exist
     if (!publicNotes.length) {
       return res.status(404).json({
