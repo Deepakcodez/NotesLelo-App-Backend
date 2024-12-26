@@ -83,7 +83,7 @@ const uploadPublicNotes = async (req, res) => {
     });
 
     // Save the record to the database
-    const record = await PublicPost.save();
+    const record = await notesSchema.save();
     // Update the Group document with the new notes _id
     await userModel.findByIdAndUpdate(userId, {
       $push: { posts: record._id },
