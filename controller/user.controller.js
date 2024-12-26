@@ -145,7 +145,7 @@ const login = async (req, resp) => {
     });
   }
 
-  // email or email:email are same thing
+
 
   try {
     const user = await userModel.findOne({ email });

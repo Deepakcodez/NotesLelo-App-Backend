@@ -24,7 +24,7 @@ const uploadFile = async (req, res) => {
     const notesSchema = new notesModel({
       caption,
       description,
-      to: groupId,
+      to: groupId || "public",
       owner: userId,
       pdf: {
         url: result.secure_url,
@@ -72,7 +72,7 @@ const groupNotes = async (req, resp) => {
   }
 
   try {
-    const currentGroupNotes = await notesModel.find({ to: groupId });
+    const currentGroupNotes = await notesModel.find({ to: groupId }).populate("owner", "name email");;
     const notesWithUserData = await Promise.all(
       currentGroupNotes.map(async (notes) => {
         // const user = await userModel.findById(userId);
@@ -104,6 +104,34 @@ const groupNotes = async (req, resp) => {
 };
 
 
+const getPublicNotes = async (req, res) => {
+  try {
+    // Fetch all notes where `to` is "public"
+    const publicNotes = await notesModel.find({ to: "public" }).populate("owner", "name email");
+
+    // Check if any public notes exist
+    if (!publicNotes.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No public notes available",
+      });
+    }
+
+    // Return the public notes
+    res.status(200).json({
+      success: true,
+      message: "Public notes retrieved successfully",
+      notes: publicNotes,
+    });
+  } catch (error) {
+    // Handle errors and return an appropriate response
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
 
 
 
@@ -302,4 +330,5 @@ module.exports = {
   saveNotes,
   UserSavedNotes,
   userNotes,
+  getPublicNotes,
 };

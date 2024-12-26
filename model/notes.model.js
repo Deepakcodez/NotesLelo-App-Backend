@@ -17,12 +17,12 @@ const postSchema = new Schema(
       url: String,
     },
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: mongoose.Schema.Types.Mixed,
+      ref: "public",
     },
-    to : {
-       type : mongoose.Schema.Types.ObjectId,
-       ref : "Group"
+    to: {
+      type: mongoose.Schema.Types.ObjectId ,
+      ref: "Group",
     },
     likes: [
       {
@@ -52,6 +52,11 @@ const postSchema = new Schema(
         },
       },
     ],
+    access: {
+      type: String,
+      enum: ["public", "private"],
+      default: "private",
+    },
     createdAt: {
       type: Date,
       default: Date.now,
