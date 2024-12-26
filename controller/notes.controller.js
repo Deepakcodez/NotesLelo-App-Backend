@@ -89,7 +89,6 @@ const uploadPublicNotes = async (req, res) => {
       $push: { posts: record._id },
     });
 
-    await userModel.save();
     // Return a success response
     res.status(200).json({
       success: true,
