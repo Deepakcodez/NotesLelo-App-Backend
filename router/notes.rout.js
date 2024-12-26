@@ -25,6 +25,13 @@ router.post(
 
 router.get("/groupNotes/:groupId", authenticate, notesController.groupNotes);
 router.get("/publicNotes", notesController.getPublicNotes);
+router.post(
+  "/publicNotes",
+  uploader.single("pdf"),
+  authenticate,
+  notesController.uploadPublicNotes
+);
+
 router.put(
   "/groupNotes/addLike/:notesId",
   authenticate,

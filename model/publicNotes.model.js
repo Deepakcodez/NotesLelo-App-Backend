@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { model, Schema } = mongoose;
 
-const postSchema = new Schema(
+const publicPostSchema = new Schema(
   {
     caption: {
       type: String,
@@ -19,11 +19,6 @@ const postSchema = new Schema(
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-    },
-    to: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Group",
-      default: null,
     },
     likes: [
       {
@@ -53,11 +48,6 @@ const postSchema = new Schema(
         },
       },
     ],
-    access: {
-      type: String,
-      enum: ["public", "private"],
-      default: "private",
-    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -66,5 +56,5 @@ const postSchema = new Schema(
   { timestamps: true }
 );
 
-const Post = mongoose.model("Post", postSchema);
-module.exports = { Post };
+const PublicPost = mongoose.model("PublicPost", publicPostSchema);
+module.exports = { PublicPost };

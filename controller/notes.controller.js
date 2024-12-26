@@ -7,10 +7,12 @@ const userdb = require("../model/user.model");
 const userModel = userdb.User;
 const cloud = require("../utils/cloudinary");
 const responseSender = require("../utils/responseSender");
+const { PublicPost } = require("../model/publicNotes.model");
 
 const uploadFile = async (req, res) => {
   const { caption, description, groupId } = req.body;
   const userId = req.userId;
+
   try {
     // Validate file and perform file upload to Cloudinary
     const result = await cloud.uploadOncloudinary(req.file.path);
@@ -24,7 +26,7 @@ const uploadFile = async (req, res) => {
     const notesSchema = new notesModel({
       caption,
       description,
-      to: groupId || "public",
+      to: groupId,
       owner: userId,
       pdf: {
         url: result.secure_url,
@@ -57,10 +59,51 @@ const uploadFile = async (req, res) => {
   }
 };
 
+const uploadPublicNotes = async (req, res) => {
+  const { caption, description } = req.body;
+  const userId = req.userId;
 
+  try {
+    // Validate file and perform file upload to Cloudinary
+    const result = await cloud.uploadOncloudinary(req.file.path);
 
+    // Check if the upload was successful
+    if (!result) {
+      throw new Error("File upload to Cloudinary failed.");
+    }
 
+    // Create a new notes record with the Cloudinary URL
+    const notesSchema = new PublicPost({
+      caption,
+      description,
+      owner: userId,
+      pdf: {
+        url: result.secure_url,
+      },
+    });
 
+    // Save the record to the database
+    const record = await notesSchema.save();
+    // Update the Group document with the new notes _id
+    await userModel.findByIdAndUpdate(userId, {
+      $push: { posts: record._id },
+    });
+    // Return a success response
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "File uploaded successfully!",
+      url: record,
+    });
+  } catch (error) {
+    // Handle errors and return an appropriate response
+    res.status(400).json({
+      success: false,
+      status: 400,
+      message: error.message,
+    });
+  }
+};
 
 const groupNotes = async (req, resp) => {
   const { groupId } = req.params;
@@ -72,7 +115,7 @@ const groupNotes = async (req, resp) => {
   }
 
   try {
-    const currentGroupNotes = await notesModel.find({ to: groupId }).populate("owner", "name email");;
+    const currentGroupNotes = await notesModel.find({ to: groupId });
     const notesWithUserData = await Promise.all(
       currentGroupNotes.map(async (notes) => {
         // const user = await userModel.findById(userId);
@@ -103,12 +146,11 @@ const groupNotes = async (req, resp) => {
   }
 };
 
-
 const getPublicNotes = async (req, res) => {
   try {
-    // Fetch all notes where `to` is "public"
-    const publicNotes = await notesModel.find({ to: "public" }).populate("owner", "name email");
-
+    console.log('>>>>>>>>>>>getting public notes')
+    const publicNotes = await PublicPost.find().populate("owner", "name email")
+    console.log('>>>>>>>>>>>', publicNotes)
     // Check if any public notes exist
     if (!publicNotes.length) {
       return res.status(404).json({
@@ -133,10 +175,6 @@ const getPublicNotes = async (req, res) => {
   }
 };
 
-
-
-
-
 const addLikeOrDislike = async (req, resp) => {
   const { notesId } = req.params;
   const userId = req.userId;
@@ -156,7 +194,7 @@ const addLikeOrDislike = async (req, resp) => {
 
     // Find the user by userId
     const user = await userModel.findById(notes.owner);
-    console.log("notes owner user",user);
+    console.log("notes owner user", user);
 
     if (userLiked) {
       // User has already liked, remove the like (dislike)
@@ -176,12 +214,10 @@ const addLikeOrDislike = async (req, resp) => {
     await user.save(); // Save the changes to the user
 
     // Fetch the updated notes with user data
-    const updatedNotes = await notesModel
-      .findById(notesId)
-      .populate({
-        path: "owner",
-        populate: { path: "likesOnOwnNotes" },
-      });
+    const updatedNotes = await notesModel.findById(notesId).populate({
+      path: "owner",
+      populate: { path: "likesOnOwnNotes" },
+    });
 
     return resp
       .status(200)
@@ -194,11 +230,6 @@ const addLikeOrDislike = async (req, resp) => {
       .send(responseSender(false, 500, "Internal server error", null));
   }
 };
-
-
-
-
-
 
 const saveNotes = async (req, resp) => {
   const { notesId } = req.params;
@@ -220,7 +251,6 @@ const saveNotes = async (req, resp) => {
     // Find the user by userId
     const user = await userModel.findById(notes.owner);
 
-
     if (userSaved) {
       // User has already liked, remove the like (dislike)
 
@@ -235,21 +265,24 @@ const saveNotes = async (req, resp) => {
       notes.saved.push(userId);
       // Add the note to user's likesOnOwnNotes
       user.savedNotes.push(notesId);
-      user.ownNotesSaves.push(userId)
+      user.ownNotesSaves.push(userId);
     }
 
     await notes.save();
     await user.save(); // Save the changes to the user
 
     // Fetch the updated notes with user data
-    const updatedNotes = await notesModel
-      .findById(notesId)
-      .populate();
+    const updatedNotes = await notesModel.findById(notesId).populate();
 
     return resp
       .status(200)
       .send(
-        responseSender(true, 200, "saved o unsaved successfull", updatedNotes.saved)
+        responseSender(
+          true,
+          200,
+          "saved o unsaved successfull",
+          updatedNotes.saved
+        )
       );
   } catch (error) {
     return resp
@@ -257,20 +290,6 @@ const saveNotes = async (req, resp) => {
       .send(responseSender(false, 500, "Internal server error", null));
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const UserSavedNotes = async (req, resp) => {
   const savedNotesid = req.user.savedNotes;
@@ -285,18 +304,6 @@ const UserSavedNotes = async (req, resp) => {
     resp.send(responseSender(false, 500, "internal server error", null));
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 const userNotes = async (req, resp) => {
   const userNotesArray = req.user.posts;
@@ -331,4 +338,5 @@ module.exports = {
   UserSavedNotes,
   userNotes,
   getPublicNotes,
+  uploadPublicNotes,
 };
