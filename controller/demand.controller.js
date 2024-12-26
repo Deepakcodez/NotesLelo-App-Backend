@@ -93,13 +93,8 @@ const addDislikeToDemand = async (req, resp) => {
 
 const addLikeToDemand = async (req, resp) => {
   const { demandId } = req.body;
-<<<<<<< HEAD
   const userId = req.userId; 
  console.log('>>>>>>>>>>>demand id user id', demandId, userId)
-=======
-  const userId = req.userId; // Assuming userId is available from auth middleware
- 
->>>>>>> b7d2cc9cd0949f0cc2d62e3ff835d218620c1391
   try {
     if (!demandId) {
       return resp.send(responseSender(false, 400, "Demand ID not provided", null));
