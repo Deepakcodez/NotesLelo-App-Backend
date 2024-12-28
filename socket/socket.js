@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const { Chat } = require("../model/chat.model");
 
 module.exports = {
   init(server) {
@@ -30,12 +31,36 @@ module.exports = {
           .emit("newUser:joined", { roomId, userEmail });
       });
 
-      socket.on("send:message", ({ roomId, sender, message }) => {
-        console.log(`Message from ${sender} in ${roomId}: ${message}`);
-        socket.broadcast
-          .to(roomId)
-          .emit("receive:message", { sender, message });
-      });
+      socket.on(
+        "send:message",
+        async ({ roomId, senderId, senderName, senderEmail, message, id }) => {
+          console.log(`Message from ${senderId} in ${roomId}: ${message}`);
+
+          try {
+            if (message.trim() === "") return;
+            const newChat = new Chat({
+              message,
+              from: senderId,
+              to: roomId,
+            });
+            await newChat.save();
+          } catch (error) {
+            console.log("error in storing chat in db");
+          } finally {
+            console.log(">>>>>>>>>>>go through try catch block");
+          }
+
+          io.to(roomId).emit("receive:message", {
+            id,
+            senderName,
+            senderId,
+            senderEmail,
+            message,
+          });
+        }
+      );
+
+      console.log("Message saved to database");
 
       socket.on("disconnect", () => {
         console.log("user disconnected");
