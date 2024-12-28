@@ -44,5 +44,7 @@ router.post(
 );
 router.get("/savedNotes", authenticate, notesController.UserSavedNotes);
 router.get("/your-notes", authenticate, notesController.userNotes);
+router.get("/comment", notesController.getComments);
+router.post("/comment",  notesController.postComment);
 
 module.exports = router;

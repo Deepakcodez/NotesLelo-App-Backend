@@ -331,6 +331,56 @@ const userNotes = async (req, resp) => {
   }
 };
 
+const getComments = async (req, res) => {
+  try {
+    const { postId } = req.body;
+
+    // Find the post by ID and populate user details in the comments
+    const post = await notesModel.findById(postId).populate("comments.user", "name email");
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json({ comments: post.comments });
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+const postComment = async (req, res) => {
+  try {
+    const { userId, comment, postId  } = req.body;
+
+    if (!comment || comment.trim() === "") {
+      return res.status(400).json({ message: "Comment cannot be empty" });
+    }
+
+    // Find the post by ID
+    const post = await notesModel.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Add the new comment
+    const newComment = {
+      user: userId,
+      Comment: comment,
+    };
+
+    post.comments.push(newComment);
+    await post.save();
+
+    res.status(201).json({ message: "Comment added successfully", comments: post.comments });
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   uploadFile,
   groupNotes,
@@ -340,4 +390,6 @@ module.exports = {
   userNotes,
   getPublicNotes,
   uploadPublicNotes,
+  getComments,
+  postComment
 };

@@ -34,12 +34,14 @@ const group = require("./router/groups.rout");
 const notes = require("./router/notes.rout");
 const demand = require("./router/demand.rout");
 const notification = require("./router/notificcation.route");
+const chat = require("./router/chat.rout");
 
 app.use("/api/v1/user", user);
 app.use("/api/v1/group", group);
 app.use("/api/v1/notes", notes);
 app.use("/api/v1/demand", demand);
 app.use("/api/v1/notification", notification);
+app.use("/api/v1/chat", chat);
 
 server.listen(port, () =>
   console.log(`NotesaLelo app listening on port ${port}!`)
