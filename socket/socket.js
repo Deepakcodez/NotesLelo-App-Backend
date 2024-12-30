@@ -18,10 +18,9 @@ module.exports = {
     const socketToEmailMap = new Map();
 
     io.on("connection", (socket) => {
-      console.log("a user connected", socket.id);
+      // console.log("a user connected", socket.id);
 
       socket.on("join:room", ({ userEmail, roomId }) => {
-        console.log(">>>>>>>>>>>user join in : ", roomId, userEmail);
         emailToSocketMap.set(userEmail, socket.id);
         socketToEmailMap.set(socket.id, userEmail);
         socket.join(roomId);
@@ -46,9 +45,7 @@ module.exports = {
             await newChat.save();
           } catch (error) {
             console.log("error in storing chat in db");
-          } finally {
-            console.log(">>>>>>>>>>>go through try catch block");
-          }
+          } 
 
           io.to(roomId).emit("receive:message", {
             id,
@@ -59,9 +56,6 @@ module.exports = {
           });
         }
       );
-
-      console.log("Message saved to database");
-
       socket.on("disconnect", () => {
         console.log("user disconnected");
       });

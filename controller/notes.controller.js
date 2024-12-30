@@ -237,43 +237,54 @@ const saveNotes = async (req, resp) => {
   const userId = req.userId;
 
   try {
-    // Check if the notes exist
-    const notes = await notesModel.findById(notesId);
+    let notes;
+
+    // Attempt to find the notes in both models
+    try {
+      notes = await notesModel.findById(notesId);
+    } catch (error) {
+      console.error("Error finding notes in notesModel:", error.message);
+    }
+
+    if (!notes) {
+      try {
+        notes = await PublicPost.findById(notesId);
+      } catch (error) {
+        console.error("Error finding notes in PublicPost model:", error.message);
+      }
+    }
 
     if (!notes) {
       return resp
         .status(404)
-        .send(responseSender(false, 404, "Notes not found", null));
+        .send(responseSender(false, 404, "Notes not found in any schema", null));
     }
 
-    // Check if the user has already liked the notes
+    // Check if the user has already saved the notes
     const userSaved = notes.saved.some((id) => id.equals(userId));
 
-    // Find the user by userId
+    // Find the owner of the notes
     const user = await userModel.findById(notes.owner);
+    if (!user) {
+      return resp
+        .status(404)
+        .send(responseSender(false, 404, "Notes owner not found", null));
+    }
 
     if (userSaved) {
-      // User has already liked, remove the like (dislike)
-
+      // If already saved, remove the save
       notes.saved.pull(userId);
-
-      // Remove the note from user's likesOnOwnNotes
       user.savedNotes.pull(notesId);
-
       user.ownNotesSaves.pull(userId);
     } else {
-      // User has not liked, add the like
+      // If not saved, add the save
       notes.saved.push(userId);
-      // Add the note to user's likesOnOwnNotes
       user.savedNotes.push(notesId);
       user.ownNotesSaves.push(userId);
     }
 
-    await notes.save();
-    await user.save(); // Save the changes to the user
-
-    // Fetch the updated notes with user data
-    const updatedNotes = await notesModel.findById(notesId).populate();
+    // Save changes to the notes and user
+    await Promise.all([notes.save(), user.save()]);
 
     return resp
       .status(200)
@@ -281,16 +292,18 @@ const saveNotes = async (req, resp) => {
         responseSender(
           true,
           200,
-          "saved o unsaved successfull",
-          updatedNotes.saved
+          userSaved ? "Note unsaved successfully" : "Note saved successfully",
+         
         )
       );
   } catch (error) {
+    console.error("Error in saveNotes function:", error.message);
     return resp
       .status(500)
       .send(responseSender(false, 500, "Internal server error", null));
   }
 };
+
 
 const UserSavedNotes = async (req, resp) => {
   const savedNotesid = req.user.savedNotes;
@@ -333,10 +346,12 @@ const userNotes = async (req, resp) => {
 
 const getComments = async (req, res) => {
   try {
-    const { postId } = req.body;
+    const { postId } = req.params;
 
     // Find the post by ID and populate user details in the comments
-    const post = await notesModel.findById(postId).populate("comments.user", "name email");
+    const post = await notesModel
+      .findById(postId)
+      .populate("comments.user", "name email");
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
@@ -349,10 +364,9 @@ const getComments = async (req, res) => {
   }
 };
 
-
 const postComment = async (req, res) => {
   try {
-    const { userId, comment, postId  } = req.body;
+    const { userId, comment, postId } = req.body;
 
     if (!comment || comment.trim() === "") {
       return res.status(400).json({ message: "Comment cannot be empty" });
@@ -374,10 +388,68 @@ const postComment = async (req, res) => {
     post.comments.push(newComment);
     await post.save();
 
-    res.status(201).json({ message: "Comment added successfully", comments: post.comments });
+    res
+      .status(201)
+      .json({ message: "Comment added successfully", comments: post.comments });
   } catch (error) {
     console.error("Error adding comment:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+const addLikeOrDislikeToPublicNotes = async (req, resp) => {
+  const { notesId } = req.params;
+  const userId = req.userId;
+  console.log("user notes id", notesId);
+  try {
+    // Check if the notes exist
+    const notes = await PublicPost.findById(notesId);
+    console.log(">>>>>>>>>>>notes", notes);
+    if (!notes) {
+      return resp
+        .status(404)
+        .send(responseSender(false, 404, "Notes not found!!", null));
+    }
+
+    // Check if the user has already liked the notes
+    const userLiked = notes.likes.some((id) => id.equals(userId));
+    console.log(">>>>>>>>>>>userliked", userLiked);
+
+    // Find the user by userId
+    const user = await userModel.findById(notes.owner);
+    console.log("notes owner user", user);
+
+    if (userLiked) {
+      // User has already liked, remove the like (dislike)
+
+      notes.likes.pull(userId);
+
+      // Remove the note from user's likesOnOwnNotes
+      user.likesOnOwnNotes.pull(userId);
+    } else {
+      // User has not liked, add the like
+      notes.likes.push(userId);
+      // Add the note to user's likesOnOwnNotes
+      user.likesOnOwnNotes.push(userId);
+    }
+
+    await notes.save();
+    await user.save(); // Save the changes to the user
+
+    // Fetch the updated notes with user data
+    await notesModel.findById(notesId).populate({
+      path: "owner",
+      populate: { path: "likesOnOwnNotes" },
+    });
+
+    return resp
+      .status(200)
+      .send(responseSender(true, 200, "Operation successful", null));
+  } catch (error) {
+    console.log(">>>>>>>>>>>last catch", error);
+    return resp
+      .status(500)
+      .send(responseSender(false, 500, "Internal server error!", null));
   }
 };
 
@@ -385,11 +457,12 @@ module.exports = {
   uploadFile,
   groupNotes,
   addLikeOrDislike,
+  addLikeOrDislikeToPublicNotes,
   saveNotes,
   UserSavedNotes,
   userNotes,
   getPublicNotes,
   uploadPublicNotes,
   getComments,
-  postComment
+  postComment,
 };

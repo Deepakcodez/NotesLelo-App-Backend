@@ -24,7 +24,7 @@ router.post(
 );
 
 router.get("/groupNotes/:groupId", authenticate, notesController.groupNotes);
-router.get("/publicNotes", notesController.getPublicNotes);
+router.get("/publicNotes",  notesController.getPublicNotes);
 router.post(
   "/publicNotes",
   uploader.single("pdf"),
@@ -37,6 +37,12 @@ router.put(
   authenticate,
   notesController.addLikeOrDislike
 );
+router.put(
+  "/publicNotes/addLike/:notesId",
+  authenticate,
+  notesController.addLikeOrDislikeToPublicNotes
+);
+
 router.post(
   "/groupNotes/saveNotes/:notesId",
   authenticate,
@@ -44,7 +50,7 @@ router.post(
 );
 router.get("/savedNotes", authenticate, notesController.UserSavedNotes);
 router.get("/your-notes", authenticate, notesController.userNotes);
-router.get("/comment", notesController.getComments);
+router.get("/comment/:postId", notesController.getComments);
 router.post("/comment",  notesController.postComment);
 
 module.exports = router;
