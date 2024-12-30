@@ -250,14 +250,19 @@ const saveNotes = async (req, resp) => {
       try {
         notes = await PublicPost.findById(notesId);
       } catch (error) {
-        console.error("Error finding notes in PublicPost model:", error.message);
+        console.error(
+          "Error finding notes in PublicPost model:",
+          error.message
+        );
       }
     }
 
     if (!notes) {
       return resp
         .status(404)
-        .send(responseSender(false, 404, "Notes not found in any schema", null));
+        .send(
+          responseSender(false, 404, "Notes not found in any schema", null)
+        );
     }
 
     // Check if the user has already saved the notes
@@ -292,8 +297,7 @@ const saveNotes = async (req, resp) => {
         responseSender(
           true,
           200,
-          userSaved ? "Note unsaved successfully" : "Note saved successfully",
-         
+          userSaved ? "Note unsaved successfully" : "Note saved successfully"
         )
       );
   } catch (error) {
@@ -303,7 +307,6 @@ const saveNotes = async (req, resp) => {
       .send(responseSender(false, 500, "Internal server error", null));
   }
 };
-
 
 const UserSavedNotes = async (req, resp) => {
   const savedNotesid = req.user.savedNotes;
@@ -347,11 +350,34 @@ const userNotes = async (req, resp) => {
 const getComments = async (req, res) => {
   try {
     const { postId } = req.params;
-
+    console.log("post id: ", postId);
     // Find the post by ID and populate user details in the comments
-    const post = await notesModel
-      .findById(postId)
-      .populate("comments.user", "name email");
+    let post;
+    try {
+      try {
+        post = await notesModel
+          .findById(postId)
+          .populate("comments.user", "name email");
+      } catch (error) {
+        console.log(">>>>>>>>>>>", error);
+      }
+
+      if (!post || post.length===0) {
+        try {
+          post = await PublicPost.findById(postId).populate(
+            "comments.user",
+            "name email"
+          );
+        } catch (error) {
+          console.log(">>>>>>>>>>>", error);
+        }
+      }
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+    } catch (error) {
+      console.error("Error fetching post:", error);
+    }
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
@@ -371,9 +397,24 @@ const postComment = async (req, res) => {
     if (!comment || comment.trim() === "") {
       return res.status(400).json({ message: "Comment cannot be empty" });
     }
-
+    let post;
     // Find the post by ID
-    const post = await notesModel.findById(postId);
+    try {
+      try {
+        post = await notesModel.findById(postId);
+      } catch (error) {
+        console.log(">>>>>>>>>>>", error);
+      }
+      if (!post) {
+        try {
+          post = await PublicPost.findById(postId);
+        } catch (error) {
+          console.log(">>>>>>>>>>>", error);
+        }
+      }
+    } catch (error) {
+      console.log(">>>>>>>>>>>", error);
+    }
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
