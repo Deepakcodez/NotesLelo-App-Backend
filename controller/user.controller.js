@@ -2,8 +2,9 @@ const bcrypt = require("bcrypt");
 const userdb = require("../model/user.model");
 const userModel = userdb.User;
 const nodemailer = require("nodemailer");
-var Mailgen = require("mailgen");
+var Mailgen = require('mailgen');
 const responseSender = require("../utils/responseSender");
+
 
 // Demo
 const demo = async (req, resp) => {
@@ -12,6 +13,8 @@ const demo = async (req, resp) => {
     message: "Working demo API",
   });
 };
+
+
 
 // Registration
 const register = async (req, resp) => {
@@ -70,43 +73,40 @@ const register = async (req, resp) => {
       });
 
       var mailGenerator = new Mailgen({
-        theme: "default",
+        theme: 'default',
         product: {
-          name: "NotesLelo",
-          link: "https://notes-lelo-web-app.vercel.app/signIn", // Change this URL to your app's URL
+          name: 'NotesLelo',
+          link: 'https://notes-lelo-web-app.vercel.app/signIn', // Change this URL to your app's URL
         },
       });
 
+
       // Email template
-      var emailToSend = {
-        subject: "Welcome to NotesLelo",
-        body: {
-          greeting: `Dear ${name} ,`,
-          intro:
-            "Thank you for choosing NotesLelo! We are thrilled to welcome you on board and appreciate the opportunity to serve you.",
-          action: {
-            instructions:
-              "To get started and confirm your account, please click the button below:",
-            button: {
-              color: "#22BC66", // Optional action button color
-              text: "Confirm Your Account",
-              link: "https://notes-lelo-web-app.vercel.app/signIn", // Change this URL to the actual confirmation endpoint
-            },
-          },
-          additionalInfo:
-            "By confirming your account, you'll gain access to all the exciting features and benefits that NotesLelo has to offer.",
-          outro:
-            "If you have any questions or need assistance, feel free to reply to this email. We're here to help!",
-          closing: "Best regards,",
-          signature: "The NotesLelo Team",
-        },
-      };
+var emailToSend = {
+  subject: 'Welcome to NotesLelo',
+  body: {
+      greeting: `Dear ${name} ,`,
+      intro: 'Thank you for choosing NotesLelo! We are thrilled to welcome you on board and appreciate the opportunity to serve you.',
+      action: {
+          instructions: 'To get started and confirm your account, please click the button below:',
+          button: {
+              color: '#22BC66', // Optional action button color
+              text: 'Confirm Your Account',
+              link: 'https://notes-lelo-web-app.vercel.app/signIn' // Change this URL to the actual confirmation endpoint
+            }
+      },
+      additionalInfo: 'By confirming your account, you\'ll gain access to all the exciting features and benefits that NotesLelo has to offer.',
+      outro: 'If you have any questions or need assistance, feel free to reply to this email. We\'re here to help!',
+      closing: 'Best regards,',
+      signature: 'The NotesLelo Team'
+  }
+};
 
       // Generate an HTML email with the provided contents
       var emailBody = mailGenerator.generate(emailToSend);
 
       let message = {
-        from: "noteslelo.app@gmail.com",
+        from: 'noteslelo.app@gmail.com',
         to: email,
         subject: "Welcome to NotesLelo",
         html: emailBody,
@@ -132,6 +132,7 @@ const register = async (req, resp) => {
   }
 };
 
+
 //login
 const login = async (req, resp) => {
   const { email, password } = req.body;
@@ -143,6 +144,8 @@ const login = async (req, resp) => {
       message: "email or password missing",
     });
   }
+
+
 
   try {
     const user = await userModel.findOne({ email });
@@ -221,6 +224,9 @@ const isVarify = async (req, resp) => {
   }
 };
 
+
+
+
 //logout
 const logout = async (req, resp) => {
   const userId = req.params.userId; // Change 'req.resp' to the correct property (params or body) that contains userId
@@ -238,9 +244,7 @@ const logout = async (req, resp) => {
         .send(responseSender(false, 404, "User not found", null));
     }
 
-    return resp
-      .status(200)
-      .send(responseSender(true, 200, "Logout successful", user));
+    return resp.status(200).send(responseSender(true, 200, "Logout successful",user));
   } catch (error) {
     console.error(error);
     return resp
@@ -249,32 +253,5 @@ const logout = async (req, resp) => {
   }
 };
 
-// Get User by ID
-const getUserById = async (req, resp) => {
-  const { userId } = req.params;
 
-  try {
-    const user = await userModel.findById(userId);
-    if (!user) {
-      return resp.status(404).json({
-        status: 404,
-        success: false,
-        error: "User not found",
-      });
-    }
-
-    resp.status(200).json({
-      status: 200,
-      success: true,
-      data: user,
-    });
-  } catch (error) {
-    resp.status(500).json({
-      status: 500,
-      success: false,
-      error: "Server error",
-    });
-  }
-};
-
-module.exports = { demo, register, login, isVarify, logout, getUserById };
+module.exports = { demo, register, login, isVarify,logout };

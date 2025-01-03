@@ -13,14 +13,8 @@ const postSchema = new Schema(
       required: true,
     },
     pdf: {
-      public_id: {
-        type: String,
-        required: true,
-      },
-      url: {
-        type: String,
-        required: true,
-      },
+      public_id: String,
+      url: String,
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
