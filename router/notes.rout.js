@@ -24,7 +24,7 @@ router.post(
 );
 
 router.get("/groupNotes/:groupId", authenticate, notesController.groupNotes);
-router.get("/publicNotes",  notesController.getPublicNotes);
+router.get("/publicNotes", notesController.getPublicNotes);
 router.post(
   "/publicNotes",
   uploader.single("pdf"),
@@ -51,6 +51,7 @@ router.post(
 router.get("/savedNotes", authenticate, notesController.UserSavedNotes);
 router.get("/your-notes", authenticate, notesController.userNotes);
 router.get("/comment/:postId", notesController.getComments);
-router.post("/comment",  notesController.postComment);
+router.post("/comment", notesController.postComment);
+router.post("/delete", authenticate, notesController.deletePost);
 
 module.exports = router;

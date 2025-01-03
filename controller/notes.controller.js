@@ -29,7 +29,8 @@ const uploadFile = async (req, res) => {
       to: groupId,
       owner: userId,
       pdf: {
-        url: result.secure_url,
+        public_id: result.public_id, // Save the public_id
+        url: result.secure_url, // Save the secure URL
       },
     });
 
@@ -50,6 +51,9 @@ const uploadFile = async (req, res) => {
       url: record,
     });
   } catch (error) {
+    if (cloudinaryResult && cloudinaryResult.public_id) {
+      await cloudinary.uploader.destroy(cloudinaryResult.public_id);
+    }
     // Handle errors and return an appropriate response
     res.status(400).json({
       success: false,
@@ -66,7 +70,7 @@ const uploadPublicNotes = async (req, res) => {
   try {
     // Validate file and perform file upload to Cloudinary
     const result = await cloud.uploadOncloudinary(req.file.path);
-
+    console.log(">>>>>>>>>>> cloudinary", result.secure_url, result.public_id);
     // Check if the upload was successful
     if (!result) {
       throw new Error("File upload to Cloudinary failed.");
@@ -78,7 +82,8 @@ const uploadPublicNotes = async (req, res) => {
       description,
       owner: userId,
       pdf: {
-        url: result.secure_url,
+        public_id: result.public_id, // Save the public_id
+        url: result.secure_url, // Save the secure URL
       },
     });
 
@@ -97,6 +102,9 @@ const uploadPublicNotes = async (req, res) => {
       url: record,
     });
   } catch (error) {
+    if (cloudinaryResult && cloudinaryResult.public_id) {
+      await cloudinary.uploader.destroy(cloudinaryResult.public_id);
+    }
     // Handle errors and return an appropriate response
     res.status(400).json({
       success: false,
@@ -235,10 +243,16 @@ const addLikeOrDislike = async (req, resp) => {
 const saveNotes = async (req, resp) => {
   const { notesId } = req.params;
   const userId = req.userId;
-
+  console.log(">>>>>>>>>>>notesId", notesId, userId);
   try {
     let notes;
 
+    const mySelf = await userModel.findById(userId);
+    if (!mySelf) {
+      return resp
+        .status(404)
+        .send(responseSender(false, 404, "User not found", null));
+    }
     // Attempt to find the notes in both models
     try {
       notes = await notesModel.findById(notesId);
@@ -257,6 +271,7 @@ const saveNotes = async (req, resp) => {
       }
     }
 
+    console.log(">>>>>>>>>>>notes by id", notes);
     if (!notes) {
       return resp
         .status(404)
@@ -269,8 +284,8 @@ const saveNotes = async (req, resp) => {
     const userSaved = notes.saved.some((id) => id.equals(userId));
 
     // Find the owner of the notes
-    const user = await userModel.findById(notes.owner);
-    if (!user) {
+    const ownerUser = await userModel.findById(notes.owner);
+    if (!ownerUser) {
       return resp
         .status(404)
         .send(responseSender(false, 404, "Notes owner not found", null));
@@ -279,17 +294,17 @@ const saveNotes = async (req, resp) => {
     if (userSaved) {
       // If already saved, remove the save
       notes.saved.pull(userId);
-      user.savedNotes.pull(notesId);
-      user.ownNotesSaves.pull(userId);
+      mySelf.savedNotes.pull(notesId);
+      ownerUser.ownNotesSaves.pull(userId);
     } else {
       // If not saved, add the save
       notes.saved.push(userId);
-      user.savedNotes.push(notesId);
-      user.ownNotesSaves.push(userId);
+      mySelf.savedNotes.push(notesId);
+      ownerUser.ownNotesSaves.push(userId);
     }
 
-    // Save changes to the notes and user
-    await Promise.all([notes.save(), user.save()]);
+    // Save changes to the notes and users
+    await Promise.all([notes.save(), mySelf.save(), ownerUser.save()]);
 
     return resp
       .status(200)
@@ -310,13 +325,27 @@ const saveNotes = async (req, resp) => {
 
 const UserSavedNotes = async (req, resp) => {
   const savedNotesid = req.user.savedNotes;
+  console.log(">>>>>>>>>>>saved notes", savedNotesid);
   try {
     if (!savedNotesid) {
       resp.send(responseSender(true, 200, "not any saved notes", null));
     }
 
-    const savedNotes = await notesModel.find({ _id: savedNotesid });
-    resp.send(responseSender(true, 200, " user saved notes", savedNotes));
+    // Fetch notes from both models concurrently
+    const [savedNotes, savedPublicNotes] = await Promise.all([
+      notesModel.find({ _id: { $in: savedNotesid } }),
+      PublicPost.find({ _id: { $in: savedNotesid } }),
+    ]);
+    console.log("in save");
+    // Combine  the results
+    const combinedNotes = [...savedNotes, ...savedPublicNotes];
+    console.log("in save", combinedNotes);
+
+    if (combinedNotes.length === 0) {
+      return resp.send(responseSender(true, 200, "No saved notes found", null));
+    }
+
+    resp.send(responseSender(true, 200, " user saved notess ", combinedNotes));
   } catch (error) {
     resp.send(responseSender(false, 500, "internal server error", null));
   }
@@ -326,20 +355,32 @@ const userNotes = async (req, resp) => {
   const userNotesArray = req.user.posts;
   console.log(">>>>>>>>>>>notesId", userNotesArray);
 
-  if (!userNotesArray) {
-    return resp.send(responseSender(false, 500, "Notes not found", null));
+  if (!userNotesArray || userNotesArray.length === 0) {
+    return resp.send(responseSender(false, 404, "Notes not found", null));
   }
 
   try {
-    const notes = await notesModel.find({ _id: userNotesArray });
+    // Fetch notes from both models concurrently
+    const [notes, publicNotes] = await Promise.all([
+      notesModel.find({ _id: { $in: userNotesArray } }),
+      PublicPost.find({ _id: { $in: userNotesArray } }),
+    ]);
 
-    if (!notes || notes.length === 0) {
+    // Combine the results
+    const combinedNotes = [...notes, ...publicNotes];
+
+    if (combinedNotes.length === 0) {
       return resp.send(responseSender(false, 404, "Notes not found", null));
     }
 
     console.log(req.user); // Log user information
     return resp.send(
-      responseSender(true, 200, "Shared notes fetched successfully", notes)
+      responseSender(
+        true,
+        200,
+        "User notes fetched successfully",
+        combinedNotes
+      )
     );
   } catch (error) {
     console.error("Error fetching user notes:", error);
@@ -362,7 +403,7 @@ const getComments = async (req, res) => {
         console.log(">>>>>>>>>>>", error);
       }
 
-      if (!post || post.length===0) {
+      if (!post || post.length === 0) {
         try {
           post = await PublicPost.findById(postId).populate(
             "comments.user",
@@ -494,6 +535,59 @@ const addLikeOrDislikeToPublicNotes = async (req, resp) => {
   }
 };
 
+const deletePost = async (req, res) => {
+  const { postId, groupId } = req.body; // Get postId from the request body
+  const userId = req.userId; // Get userId from the authenticated request
+
+  try {
+    // Find the post to ensure it exists
+    let post;
+
+    if (groupId) {
+      post = await notesModel.findById(postId);
+      if (!post) {
+        throw new Error("Post not found.");
+      }
+    } else {
+      post = await PublicPost.findById(postId);
+      if (!post) {
+        throw new Error("Post not found.");
+      }
+    }
+
+    // Check if the user is the owner of the post
+    if (post.owner.toString() !== userId.toString()) {
+      throw new Error("You are not authorized to delete this post.");
+    }
+
+    // Delete the file from Cloudinary using the public_id
+    await cloud?.uploader?.destroy(post.pdf.public_id);
+    // Remove the postId from the user's posts
+    await userModel.findByIdAndUpdate(userId, { $pull: { posts: postId } });
+    // Delete the post from the appropriate collection and update the group if necessary
+    if (groupId) {
+      await notesModel.findByIdAndDelete(postId);
+      await groupdb.findByIdAndUpdate(groupId, { $pull: { notes: postId } });
+    } else {
+      await PublicPost.findByIdAndDelete(postId);
+    }
+
+    // Return a success response
+    res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Post deleted successfully!",
+    });
+  } catch (error) {
+    // Handle errors and return an appropriate response
+    res.status(400).json({
+      success: false,
+      status: 400,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   uploadFile,
   groupNotes,
@@ -506,4 +600,5 @@ module.exports = {
   uploadPublicNotes,
   getComments,
   postComment,
+  deletePost,
 };
